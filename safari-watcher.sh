@@ -1,33 +1,4 @@
 #!/bin/bash
-
-# Safari Session Restore - Installer
-# https://github.com/SebastianBurke/safari-session-restore
-
-set -e
-
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-echo ""
-echo "🔵 Safari Session Restore - Installer"
-echo "======================================"
-echo ""
-
-# --- Check macOS ---
-if [[ "$OSTYPE" != "darwin"* ]]; then
-  echo -e "${RED}❌ This script only works on macOS.${NC}"
-  exit 1
-fi
-
-SCRIPT_PATH="$HOME/safari-watcher.sh"
-PLIST_PATH="$HOME/Library/LaunchAgents/com.user.safariwatcher.plist"
-
-# --- Create the watcher script ---
-echo -e "${YELLOW}→ Creating watcher script...${NC}"
-cat > "$SCRIPT_PATH" << 'EOF'
-#!/bin/bash
 was_running=false
 just_restored=false
 
@@ -80,6 +51,7 @@ APPLESCRIPT
                 fi
             fi
 
+            # Skip saving once right after restore, then save normally
             if [ "$just_restored" = true ]; then
                 just_restored=false
             else
@@ -109,49 +81,3 @@ APPLESCRIPT
         was_running=false
     fi
 done
-EOF
-
-chmod +x "$SCRIPT_PATH"
-echo -e "${GREEN}✅ Watcher script created.${NC}"
-
-# --- Create the launchd plist ---
-echo -e "${YELLOW}→ Creating launchd agent...${NC}"
-mkdir -p "$HOME/Library/LaunchAgents"
-cat > "$PLIST_PATH" << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.user.safariwatcher</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/bash</string>
-        <string>$SCRIPT_PATH</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-EOF
-echo -e "${GREEN}✅ Launchd agent created.${NC}"
-
-# --- Load the agent ---
-echo -e "${YELLOW}→ Starting the watcher...${NC}"
-launchctl bootout gui/$(id -u) "$PLIST_PATH" 2>/dev/null || true
-launchctl bootstrap gui/$(id -u) "$PLIST_PATH"
-
-# --- Verify ---
-sleep 1
-if launchctl list | grep -q "safariwatcher"; then
-  echo -e "${GREEN}✅ Watcher is running!${NC}"
-else
-  echo -e "${RED}❌ Something went wrong. Try running: launchctl bootstrap gui/$(id -u) $PLIST_PATH${NC}"
-  exit 1
-fi
-
-echo ""
-echo -e "${GREEN}🎉 All done! Safari will now restore your tabs when you close the window with the red X.${NC}"
-echo ""
