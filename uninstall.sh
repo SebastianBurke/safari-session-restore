@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Safari Session Restore - Uninstaller
-# https://github.com/sebastianburke/safari-session-restore
+# https://github.com/SebastianBurke/safari-session-restore
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -17,7 +17,7 @@ PLIST_PATH="$HOME/Library/LaunchAgents/com.user.safariwatcher.plist"
 BACKUP_PATH="$HOME/safari-tabs-backup.txt"
 
 echo -e "${YELLOW}→ Stopping watcher...${NC}"
-launchctl unload "$PLIST_PATH" 2>/dev/null && echo -e "${GREEN}✅ Watcher stopped.${NC}" || echo "ℹ️  Watcher wasn't running."
+launchctl bootout gui/$(id -u) "$PLIST_PATH" 2>/dev/null && echo -e "${GREEN}✅ Watcher stopped.${NC}" || echo "ℹ️  Watcher wasn't running."
 
 echo -e "${YELLOW}→ Removing files...${NC}"
 rm -f "$PLIST_PATH" && echo -e "${GREEN}✅ Removed launchd agent.${NC}"
